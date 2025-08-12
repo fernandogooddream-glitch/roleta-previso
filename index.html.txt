@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roleta Previsor Simples</title>
+<style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #111; color: white; padding: 20px; }
+    select, input, button { padding: 10px; margin: 5px; font-size: 16px; }
+    .resultado { margin-top: 20px; }
+    .numero { display: inline-block; margin: 5px; padding: 10px; border-radius: 5px; background: #222; }
+    .alerta { color: yellow; font-weight: bold; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>🎯 Roleta Previsor Simples</h1>
+
+<label>Escolha a roleta:</label>
+<select id="roleta">
+    <option>Roleta 1</option>
+    <option>Roleta 2</option>
+    <option>Roleta 3</option>
+</select>
+
+<br>
+<input type="text" id="numero" placeholder="Digite o último número">
+<button onclick="adicionarNumero()">Adicionar</button>
+<button onclick="analisar()">Analisar Tendência</button>
+<button onclick="copiarNumeros()">Copiar Números</button>
+<br>
+<label><input type="checkbox" id="som" checked> Alerta Sonoro</label>
+
+<div id="historico"></div>
+<div id="resultado" class="resultado"></div>
+<div id="alerta" class="alerta"></div>
+
+<script>
+let numeros = [];
+
+function adicionarNumero() {
+    let num = document.getElementById("numero").value;
+    if (num !== "" && !isNaN(num)) {
+        numeros.push(parseInt(num));
+        document.getElementById("historico").innerHTML = "Histórico: " + numeros.join(", ");
+        document.getElementById("numero").value = "";
+    }
+}
+
+function analisar() {
+    if (numeros.length < 5) {
+        alert("Adicione pelo menos 5 números para análise.");
+        return;
+    }
+
+    let contagem = {};
+    for (let n of numeros) {
+        contagem[n] = (contagem[n] || 0) + 1;
+    }
+
+    let ranking = Object.entries(contagem)
+        .map(([num, freq]) => ({
+            numero: num,
+            chance: (freq / numeros.length * 100).toFixed(2)
+        }))
+        .sort((a, b) => b.chance - a.chance)
+        .slice(0, 22);
+
+    let html = "<h2>Números Prováveis</h2>";
+    ranking.forEach(r => {
+        html += `<div class='numero'>${r.numero} - ${r.chance}%</div>`;
+    });
+
+    document.getElementById("resultado").innerHTML = html;
+
+    if (document.getElementById("som").checked) {
+        let beep = new Audio("https://www.soundjay.com/button/beep-07.wav");
+        beep.play();
+    }
+    document.getElementById("alerta").innerText = "🚨 Oportunidade de aposta detectada!";
+}
+
+function copiarNumeros() {
+    let texto = document.getElementById("resultado").innerText;
+    navigator.clipboard.writeText(texto).then(() => {
+        alert("Números copiados!");
+    });
+}
+</script>
+
+</body>
+</html>
