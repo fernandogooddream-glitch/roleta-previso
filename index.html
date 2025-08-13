@@ -1,24 +1,27 @@
-<!doctype html>
+     <!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Roleta Previsor — Mini App</title>
+<title>Roleta Previsor — Pro</title>
 <style>
-  :root{--bg:#0f172a;--card:#0b1220;--muted:#9aaecf;--accent:#0c4a6e}
+  :root{
+    --bg:#0f172a;--card:#0b1220;--muted:#9aaecf;--accent:#0c4a6e;
+    --chip:#ffd166;--chip2:#7bd389;--danger:#b91c1c;--ok:#15803d
+  }
+  *{box-sizing:border-box}
   body{font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:#e6eef8;margin:0;padding:16px}
-  .wrap{max-width:1100px;margin:0 auto}
-  .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,.7)}
-  h1{margin:0 0 8px;font-size:20px}
-  p{margin:6px 0 12px;color:var(--muted);font-size:13px}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  input,select,button{padding:8px;border-radius:8px;border:1px solid #1f2937;background:#071029;color:#e6eef8}
+  .wrap{max-width:1200px;margin:0 auto}
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.7)}
+  h1{margin:0 0 6px;font-size:20px}
+  p{margin:6px 0 10px;color:var(--muted);font-size:13px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input,select,button{padding:8px 10px;border-radius:8px;border:1px solid #1f2937;background:#071029;color:#e6eef8}
   button{cursor:pointer;background:var(--accent);border:none}
-  .controls{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
-  .panel{padding:8px;background:#051022;border-radius:8px}
+  .controls{margin-top:10px;display:flex;gap:12px;flex-wrap:wrap}
+  .panel{padding:10px;background:#051022;border-radius:10px}
   .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:6px}
-  .numbtn{padding:8px;border-radius:6px;background:#061427;border:1px solid #14324a;color:#e6eef8;text-align:center;cursor:pointer;user-select:none}
-  .numbtn.active{background:#184b2b}
+  .numbtn{padding:8px;border-radius:6px;background:#061427;border:1px solid #14324a;text-align:center;cursor:pointer;user-select:none}
   .history{max-height:160px;overflow:auto;padding:8px;border-radius:6px;background:#041021;display:flex;flex-wrap:wrap;gap:6px}
   .chip{background:#061427;padding:6px 8px;border-radius:6px;font-weight:600}
   .predictions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -35,6 +38,14 @@
   textarea{width:100%;min-height:80px;background:#041021;color:#e6eef8;border-radius:6px;padding:8px;border:1px solid #122033}
   .switch{display:inline-flex;align-items:center;gap:6px}
   .small-btn{padding:6px 8px;font-size:13px;border-radius:6px;background:#184b2b}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .ok{color:var(--ok)} .bad{color:var(--danger)}
+  /* wheel */
+  .wheelWrap{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .wheelBox{background:#041021;border-radius:12px;padding:10px}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+  .badge{padding:3px 6px;border-radius:999px;background:#062033}
+  .hl{border:1px dashed #335; padding:6px 8px; border-radius:8px}
 </style>
 </head>
 <body>
@@ -42,54 +53,92 @@
   <div class="card">
     <div class="topbar">
       <div>
-        <h1>Roleta Previsor — Mini App</h1>
-        <p>Botões rápidos, histórico (últimos 500), algoritmos de recência / setor / momentum, detector de oportunidade e export/import.</p>
+        <h1>Roleta Previsor — Pro</h1>
+        <p>Gráfico da roleta com fichas, vizinhos até 9, recência/momentum/setor, setor quente, importação por URL/CSV ou manual e alarme.</p>
       </div>
       <div class="right">
         <label class="small">Tipo:</label>
         <select id="wheelType">
-          <option value="european">Roleta Europeia (0-36)</option>
-          <option value="american">Roleta Americana (0-36 + 00)</option>
+          <option value="european">Roleta Europeia (0–36)</option>
+          <option value="american">Roleta Americana (0–36 + 00)</option>
         </select>
-        <label class="small">Nº sugeridos:</label>
+        <label class="small">QTD sugerida:</label>
         <select id="pickCount"><option>20</option><option>21</option><option>22</option></select>
         <button id="downloadHtml" class="small-btn">Baixar HTML</button>
       </div>
     </div>
 
     <div class="controls">
-      <div style="flex:1;min-width:320px">
-        <div class="panel">
-          <div class="row" style="margin-bottom:8px">
-            <div style="flex:1"><strong>Entrada rápida (clique no número):</strong></div>
-            <div style="display:flex;gap:6px">
+
+      <!-- COLUNA ESQ: ENTRADAS / HISTÓRICO -->
+      <div style="flex:1;min-width:330px">
+        <div class="panel col">
+          <div class="row" style="justify-content:space-between">
+            <strong>Entrada rápida (clique):</strong>
+            <div class="row">
               <button id="undo" class="small-btn">Desfazer</button>
               <button id="clear" class="small-btn">Limpar</button>
+              <button id="saveSession" class="small-btn">Salvar sessão</button>
+              <button id="loadSession" class="small-btn">Carregar sessão</button>
             </div>
           </div>
-          <div id="buttonsArea" class="grid" style="margin-bottom:8px"></div>
-          <div class="row">
+          <div id="buttonsArea" class="grid"></div>
+
+          <div class="row" style="align-items:flex-start">
             <div style="flex:1">
-              <strong>Histórico (mais recente primeiro):</strong>
+              <strong>Histórico (mais recente →):</strong>
               <div id="history" class="history">(vazio)</div>
             </div>
+          </div>
+
+          <div class="panel">
+            <strong>Importar histórico</strong>
+            <div class="small">Cole números separados por vírgula/linha, mais antigos primeiro.</div>
+            <textarea id="bulkInput" placeholder="ex: 12,0,7,32"></textarea>
+            <div class="row">
+              <button id="bulkImport" class="small-btn">Importar em lote</button>
+              <button id="downloadHistory" class="small-btn">Baixar CSV</button>
+              <button id="exportCsv" class="small-btn">Exportar CSV</button>
+              <button id="importCsvBtn" class="small-btn">Importar CSV</button>
+              <input type="file" id="fileInput" accept=".csv" style="display:none"/>
+            </div>
+          </div>
+
+          <div class="panel">
+            <strong>Link da roleta / histórico (experimental)</strong>
+            <div class="small">Cole um link que contenha números (CSV ou texto). Alguns sites bloqueiam por CORS; se falhar, baixe o CSV e importe.</div>
+            <div class="row">
+              <input id="urlInput" placeholder="https://..."/>
+              <button id="fetchUrl" class="small-btn">Buscar histórico (URL)</button>
+            </div>
+            <div id="urlStatus" class="small"></div>
           </div>
         </div>
       </div>
 
-      <div style="width:420px">
-        <div class="panel">
-          <div class="row" style="align-items:center;gap:10px">
+      <!-- COLUNA MEIO: GRÁFICO DA ROLETA -->
+      <div class="wheelBox">
+        <div class="wheelWrap">
+          <svg id="wheelSvg" width="360" height="360" viewBox="0 0 360 360" aria-label="roleta"></svg>
+        </div>
+        <div class="legend">
+          <span class="badge">Fichas amarelas = sugestões (Top N)</span>
+          <span class="badge">Fichas verdes = vizinhos do semente</span>
+        </div>
+      </div>
+
+      <!-- COLUNA DIR: PREVISÕES / ESTRATÉGIAS -->
+      <div style="width:420px;min-width:320px">
+        <div class="panel col">
+
+          <div class="row" style="align-items:center">
             <div style="flex:1">
-              <strong>Previsões — ordem da roda</strong>
-              <div class="small">Exibe do mais provável para o menos provável; mostra a chance estimada do conjunto (%%) abaixo.</div>
+              <strong>Previsões</strong>
+              <div class="small">Mostra Top N (ordem por score). Copiar lista sai na ordem da roda.</div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <label class="small">Alarme:<br/>
-                <select id="alarmMode">
-                  <option value="fixed">Fixo</option>
-                  <option value="manual">Manual</option>
-                </select>
+            <div class="row">
+              <label class="small">Alarme:
+                <select id="alarmMode"><option value="fixed">Fixo</option><option value="manual">Manual</option></select>
               </label>
               <label class="switch small"><input type="checkbox" id="soundToggle"/> Som</label>
             </div>
@@ -97,274 +146,425 @@
 
           <div id="predictions" class="predictions"></div>
 
-          <div style="margin-top:8px" class="row">
-            <div style="flex:1">
-              <div class="small">Probabilidade estimada da ordem de entrada bater (ajustada): <strong id="setProb">0.0%</strong></div>
+          <div class="row">
+            <div style="flex:1" class="small">
+              Prob. estimada do conjunto: <strong id="setProb">0.0%</strong>
+              <span id="ratioLbl" class="hl"></span>
             </div>
-            <div>
-              <button id="copyList" class="copybtn small-btn">Copiar lista</button>
-            </div>
+            <button id="copyList" class="copybtn small-btn">Copiar lista</button>
           </div>
 
-          <div id="opportunityBox" class="small" style="margin-top:8px"></div>
+          <div id="opportunityBox" class="small"></div>
 
-          <div style="margin-top:8px" class="row">
-            <button id="exportCsv" class="small-btn">Exportar CSV</button>
-            <button id="importCsvBtn" class="small-btn">Importar CSV</button>
-            <input type="file" id="fileInput" accept=".csv" style="display:none"/>
+          <div class="panel">
+            <strong>Vizinhos (até 9)</strong>
+            <div class="small">Base: número-semente de maior score ou escolha manual.</div>
+            <div class="row">
+              <label class="small">Qtd vizinhos/lado:
+                <input id="neighbors" type="number" min="0" max="9" value="4" style="width:80px"/>
+              </label>
+              <label class="small">Semente:
+                <select id="seedSelect"></select>
+              </label>
+              <button id="applyNeighbors" class="small-btn">Aplicar</button>
+            </div>
+            <div id="neighborsInfo" class="small"></div>
           </div>
 
-          <div style="margin-top:8px">
-            <label class="small">Parâmetros (ajuste se quiser):</label>
-            <div class="row" style="margin-top:6px">
+          <div class="panel">
+            <strong>Parâmetros (ajuste)</strong>
+            <div class="row">
               <label class="small">Half-life<input id="paramHalfLife" type="number" value="50" style="width:90px"/></label>
               <label class="small">MomentumWindow<input id="paramMomentumWindow" type="number" value="6" style="width:90px"/></label>
               <label class="small">MomentumBonus<input id="paramMomentumBonus" type="number" value="1.2" step="0.1" style="width:90px"/></label>
               <label class="small">Threshold<input id="paramThreshold" type="number" value="1.6" step="0.1" style="width:90px"/></label>
             </div>
+            <div class="small">Setor quente: varredura de janelas 5–11 posições; se pontuação do setor ≥ média*threshold → marca oportunidade.</div>
           </div>
 
         </div>
       </div>
     </div>
 
-    <div style="margin-top:10px" class="panel">
-      <strong>Entrada em lote / Colar histórico:</strong>
-      <div class="small">Cole números separados por vírgula (mais antigos primeiro) e clique em Importar em lote.</div>
-      <textarea id="bulkInput" placeholder="ex: 12,0,7,32"></textarea>
-      <div style="margin-top:8px" class="row">
-        <button id="bulkImport" class="small-btn">Importar em lote</button>
-        <button id="downloadHistory" class="small-btn">Baixar histórico (CSV)</button>
-      </div>
-    </div>
-
     <div class="footer">
-      <div>Algoritmo: combinação de ponderação exponencial por recência, bônus de momentum para números recentes e reforço por setores (vizinhança no mapa da roda). Probabilidade do conjunto calculada a partir da probabilidade base (k/total_faces) e ajustada pelo quão forte o padrão está (ratio top/mean).</div>
+      <div>Estratégias: (1) Recência com meia-vida; (2) Bônus de momentum para os últimos N; (3) Reforço por setor (vizinhança na roda); (4) Varredura de setor quente; (5) Vizinhos do semente (0–9). <br/>Aviso: roleta justa tem resultados independentes; use como <em>ferramenta visual</em>, não garantia. Jogue com responsabilidade.</div>
     </div>
   </div>
 </div>
 
 <script>
+/* ===================== DADOS DA ROLETA ===================== */
 const WHEELS = {
   european: {
     faces: 37,
-    labels: ['0','32','15','19','4','21','2','25','17','34','6','27','13','36','11','30','8','23','10','5','24','16','33','1','20','14','31','9','22','18','29','7','28','12','35','3','26']
+    labels: ['0','32','15','19','4','21','2','25','17','34','6','27','13','36','11','30','8','23','10','5','24','16','33','1','20','14','31','9','22','18','29','7','28','12','35','3','26'],
   },
   american: {
     faces: 38,
     labels: ['0','28','9','26','30','11','7','20','32','17','5','22','34','15','3','24','36','13','1','00','27','10','25','29','12','8','19','31','18','6','21','33','16','4','23','35','14','2']
   }
 };
+// Cores oficiais: vermelho = {1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36}
+const REDS = new Set(['1','3','5','7','9','12','14','16','18','19','21','23','25','27','30','32','34','36']);
 
-let history = []; // newest first
+/* ===================== ESTADO ===================== */
+let history = []; // mais recente primeiro
 const MAX_HISTORY = 500;
+let lastPred = null;
+let neighborSet = new Set(); // números marcados como vizinhos
+let audioCtx = null;
 
+/* ============ HELPERS GERAIS ============ */
 function getWheel(){ return document.getElementById('wheelType').value; }
 function getLabels(){ return WHEELS[getWheel()].labels.slice(); }
 function totalFaces(){ return WHEELS[getWheel()].faces; }
+function isRed(n){ return REDS.has(String(n)); }
+function sectorIndex(label){ return getLabels().indexOf(String(label)); }
 
+/* ============ UI BÁSICA ============ */
 function renderButtons(){
-  const area = document.getElementById('buttonsArea');
-  area.innerHTML = '';
-  const buttonsOrder = [];
-  for(let i=0;i<=36;i++) buttonsOrder.push(String(i));
-  if(getWheel() === 'american') buttonsOrder.push('00');
-  buttonsOrder.forEach(l=>{
-    const btn = document.createElement('div');
-    btn.className = 'numbtn';
-    btn.textContent = l;
-    btn.dataset.value = l;
-    btn.addEventListener('click', ()=>{ addNumber(l); });
-    area.appendChild(btn);
+  const area = document.getElementById('buttonsArea'); area.innerHTML='';
+  const btns = [];
+  for(let i=0;i<=36;i++) btns.push(String(i));
+  if(getWheel()==='american') btns.splice(1,0,'00'); // só para ficar visível cedo
+  btns.forEach(l=>{
+    const d=document.createElement('div');
+    d.className='numbtn'; d.textContent=l; d.addEventListener('click',()=>addNumber(l));
+    area.appendChild(d);
   });
 }
-
 function renderHistory(){
-  const el = document.getElementById('history');
-  if(history.length === 0){ el.innerHTML = '(vazio)'; return; }
-  el.innerHTML = '';
+  const el=document.getElementById('history');
+  if(history.length===0){ el.innerHTML='(vazio)'; return;}
+  el.innerHTML='';
   history.slice(0,200).forEach(n=>{
-    const s = document.createElement('div'); s.className='chip'; s.textContent = n; el.appendChild(s);
+    const s=document.createElement('div'); s.className='chip'; s.textContent=n; el.appendChild(s);
   });
 }
 
+/* ============ ALGORITMOS ============ */
 function calcScores(){
-  const DECAY_HALF_LIFE = Number(document.getElementById('paramHalfLife').value) || 50;
-  const MOMENTUM_WINDOW = Number(document.getElementById('paramMomentumWindow').value) || 6;
-  const MOMENTUM_BONUS = Number(document.getElementById('paramMomentumBonus').value) || 1.2;
-  const labels = getLabels();
-  const scores = {};
-  labels.forEach(l => scores[l] = 0);
-  const lambda = Math.log(2) / DECAY_HALF_LIFE;
-  for(let idx=0; idx<history.length; idx++){
-    const num = history[idx];
-    if(!(num in scores)) continue;
-    const w = Math.exp(-lambda * idx);
-    scores[num] += w;
+  const HL=Number(document.getElementById('paramHalfLife').value)||50;
+  const MW=Number(document.getElementById('paramMomentumWindow').value)||6;
+  const MB=Number(document.getElementById('paramMomentumBonus').value)||1.2;
+  const labels=getLabels();
+  const scores={}; labels.forEach(l=>scores[l]=0);
+  const lambda=Math.log(2)/HL;
+  for(let i=0;i<history.length;i++){
+    const num=history[i]; if(!(num in scores)) continue;
+    const w=Math.exp(-lambda*i); scores[num]+=w;
   }
-  const recent = new Set(history.slice(0, Number(MOMENTUM_WINDOW)));
-  recent.forEach(n=>{ if(n in scores) scores[n] *= MOMENTUM_BONUS; });
+  new Set(history.slice(0,MW)).forEach(n=>{ if(n in scores) scores[n]*=MB; });
   return scores;
 }
-
 function sectorBoost(scores){
-  const labels = getLabels();
-  const N = labels.length;
-  const boosted = {};
-  labels.forEach(l=> boosted[l] = scores[l] || 0);
+  const labels=getLabels(),N=labels.length, boosted={}; labels.forEach(l=>boosted[l]=scores[l]||0);
   for(let i=0;i<N;i++){
-    const l = labels[i];
-    let neighSum = 0;
-    for(let d=-2; d<=2; d++){
-      if(d===0) continue;
-      const j = (i + d + N) % N;
-      const ln = labels[j];
-      neighSum += (scores[ln] || 0);
-    }
-    boosted[l] += neighSum * 0.15;
+    let neighSum=0; for(let d=-2; d<=2; d++){ if(d===0) continue; const j=(i+d+N)%N; neighSum += (scores[labels[j]]||0); }
+    boosted[labels[i]] += neighSum*0.15;
   }
   return boosted;
 }
-
-function getTopNInWheelOrder(n){
-  const labels = getLabels();
-  const raw = calcScores();
-  const boosted = sectorBoost(raw);
-  const arr = Object.keys(boosted).map(k=>({label:k,score:boosted[k]}));
-  arr.sort((a,b)=>b.score - a.score);
-  const topNset = new Set(arr.slice(0, Number(n)).map(x=>x.label));
-  const orderedByScore = arr.slice(0,Number(n));
-  const ordered = labels.filter(l=>topNset.has(l));
-  return {byScore: orderedByScore, byWheel: ordered, scores: boosted};
-}
-
-function estimateSetProbability(selectedCount, scores){
-  const total = getLabels().length;
-  const k = selectedCount;
-  const baseline = 1 - Math.pow(1 - (k/total), 1);
-  const vals = Object.values(scores);
-  const meanAll = vals.reduce((a,b)=>a+b,0)/vals.length;
-  const sortedVals = vals.slice().sort((a,b)=>b-a);
-  const topMean = sortedVals.slice(0, selectedCount).reduce((a,b)=>a+b,0)/selectedCount;
-  const ratio = meanAll>0 ? (topMean / meanAll) : 1;
-  const norm = Math.min(ratio / 1.6, 2.5);
-  const adjusted = baseline * norm;
-  const pct = Math.max(0, Math.min(adjusted * 100, 99.9));
-  return {pct, baseline, ratio};
-}
-
-function renderPredictions(){
-  const pickCount = Number(document.getElementById('pickCount').value);
-  const {byScore, byWheel, scores} = getTopNInWheelOrder(pickCount);
-  const predDiv = document.getElementById('predictions');
-  predDiv.innerHTML = '';
-  byScore.forEach(item=>{
-    const d = document.createElement('div'); d.className='pred';
-    d.innerHTML = `<div class="num">${item.label}</div><div class="meta">score: ${item.score.toFixed(4)}</div>`;
-    predDiv.appendChild(d);
-  });
-  const est = estimateSetProbability(pickCount, scores);
-  document.getElementById('setProb').textContent = est.pct.toFixed(1) + '%';
-  const threshold = Number(document.getElementById('paramThreshold').value) || 1.6;
-  const ratio = est.ratio;
-  const box = document.getElementById('opportunityBox');
-  if(history.length > 30 && ratio >= threshold && document.getElementById('alarmMode').value === 'fixed'){
-    box.innerHTML = '<div class="alert">OPORTUNIDADE: razão top/mean = ' + ratio.toFixed(2) + ' (limiar ' + threshold + ').</div>';
-    if(document.getElementById('soundToggle').checked){ playBeep(); }
-  } else {
-    if(document.getElementById('alarmMode').value === 'manual'){
-      box.innerHTML = '<div class="noalert">Modo manual. Razão top/mean = ' + ratio.toFixed(2) + ' (limiar ' + threshold + ').</div>';
-    } else {
-      box.innerHTML = '<div class="noalert">Sem oportunidade clara (razão top/mean = ' + ratio.toFixed(2) + ').</div>';
+function scanHotSector(scores){
+  // Varre janelas de 5 a 11 posições e retorna o melhor setor (label indices contíguos)
+  const labels=getLabels(),N=labels.length,vals=labels.map(l=>scores[l]||0);
+  const allMeans=vals.reduce((a,b)=>a+b,0)/N || 0.00001;
+  let best={sum:0,len:0,start:0,ratio:0};
+  for(let len=5; len<=11; len+=2){
+    for(let s=0; s<N; s++){
+      let sum=0; for(let k=0;k<len;k++){ sum += vals[(s+k)%N]; }
+      const mean=sum/len, ratio=mean/(allMeans||0.00001);
+      if(ratio>best.ratio){ best={sum,len,start:s,ratio}; }
     }
   }
-  window._lastPredictions = {byScore, byWheel, scores};
+  best.labels=[]; for(let k=0;k<best.len;k++){ best.labels.push(labels[(best.start+k)%labels.length]); }
+  return best;
+}
+function getTopNInWheelOrder(n){
+  const labels=getLabels(); const raw=calcScores(); const boosted=sectorBoost(raw);
+  const arr=Object.keys(boosted).map(k=>({label:k,score:boosted[k]})).sort((a,b)=>b.score-a.score);
+  const top=arr.slice(0,Number(n));
+  const topSet=new Set(top.map(x=>x.label));
+  const byWheel=labels.filter(l=>topSet.has(l));
+  return {byScore:top, byWheel, scores:boosted};
+}
+function estimateSetProbability(selectedCount, scores){
+  const total=getLabels().length, k=selectedCount;
+  const baseline = 1 - Math.pow(1 - (k/total), 1); // 1 giro
+  const vals=Object.values(scores), mean=vals.reduce((a,b)=>a+b,0)/vals.length || 0.00001;
+  const topMean = Object.entries(scores).sort((a,b)=>b[1]-a[1]).slice(0,selectedCount).reduce((a,kv)=>a+kv[1],0)/selectedCount;
+  const ratio=topMean/(mean||0.00001);
+  const norm=Math.min(ratio/1.6, 2.5);
+  const adjusted=Math.max(0,Math.min(baseline*norm,0.999));
+  return {pct:adjusted*100, baseline, ratio};
 }
 
+/* ============ VIZINHOS ============ */
+function buildNeighbors(seed, k){
+  const labels=getLabels(), N=labels.length, idx=labels.indexOf(String(seed));
+  if(idx<0) return new Set();
+  const set=new Set([String(seed)]);
+  for(let d=1; d<=k; d++){
+    set.add(labels[(idx+d)%N]);
+    set.add(labels[(idx-d+N)%N]);
+  }
+  return set;
+}
+
+/* ============ RENDER PREVISÕES + PAINÉIS ============ */
+function renderPredictions(){
+  const pickCount=Number(document.getElementById('pickCount').value);
+  const {byScore, byWheel, scores}=getTopNInWheelOrder(pickCount);
+  lastPred={byScore, byWheel, scores};
+  // lista “cartões”
+  const predDiv=document.getElementById('predictions'); predDiv.innerHTML='';
+  byScore.forEach((it,i)=>{
+    const d=document.createElement('div'); d.className='pred';
+    d.innerHTML=`<div class="num">${i+1}. ${it.label}</div><div class="meta">score: ${it.score.toFixed(4)}</div>`;
+    predDiv.appendChild(d);
+  });
+  // prob do conjunto
+  const est=estimateSetProbability(pickCount, scores);
+  document.getElementById('setProb').textContent=est.pct.toFixed(1)+'%';
+  document.getElementById('ratioLbl').textContent='Razão top/média: '+est.ratio.toFixed(2);
+  // oportunidade geral
+  const threshold=Number(document.getElementById('paramThreshold').value)||1.6;
+  const box=document.getElementById('opportunityBox');
+  const hot=scanHotSector(scores);
+  const hotMsg = `Setor quente (${hot.len} pos.): ${hot.labels.join(', ')} — razão ${hot.ratio.toFixed(2)}`;
+  if(history.length>30 && est.ratio>=threshold && document.getElementById('alarmMode').value==='fixed'){
+    box.innerHTML = `<div class="alert">OPORTUNIDADE: razão top/mean = ${est.ratio.toFixed(2)} (limiar ${threshold}).<br>${hotMsg}</div>`;
+    if(document.getElementById('soundToggle').checked){ playBeep(); }
+  }else{
+    const info = (document.getElementById('alarmMode').value==='manual')
+      ? `Modo manual. ${hotMsg}`
+      : `Sem oportunidade clara. ${hotMsg}`;
+    box.innerHTML = `<div class="noalert">${info}</div>`;
+  }
+  // atualizar semente e wheel
+  fillSeedSelect(byScore);
+  drawWheel(byWheel, neighborSet);
+}
+function fillSeedSelect(byScore){
+  const sel=document.getElementById('seedSelect'); const labels=getLabels();
+  const topSeed = byScore?.[0]?.label ?? labels[0];
+  const keep = sel.value || topSeed;
+  sel.innerHTML='';
+  byScore.slice(0,12).forEach(it=>{
+    const o=document.createElement('option'); o.value=it.label; o.textContent=it.label+(it===byScore[0]?' (top)':'');
+    sel.appendChild(o);
+  });
+  labels.forEach(l=>{
+    if(![...sel.options].some(o=>o.value===l)){
+      const o=document.createElement('option'); o.value=l; o.textContent=l; sel.appendChild(o);
+    }
+  });
+  sel.value = keep;
+}
+function applyNeighborsUI(){
+  const k=Math.max(0, Math.min(9, Number(document.getElementById('neighbors').value)||0));
+  const seed=document.getElementById('seedSelect').value || (lastPred?.byScore?.[0]?.label);
+  neighborSet = buildNeighbors(seed, k);
+  document.getElementById('neighborsInfo').textContent = `Semente ${seed} com ${k} vizinhos/lado → ${[...neighborSet].join(', ')}`;
+  drawWheel(lastPred?.byWheel||[], neighborSet);
+}
+
+/* ============ GRÁFICO DA ROLETA (SVG) ============ */
+function drawWheel(predictedList=[], neighbors=new Set()){
+  const svg=document.getElementById('wheelSvg'); while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const size=360, cx=size/2, cy=size/2, R=160, N=getLabels().length, labels=getLabels();
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(g);
+
+  function arcPath(startAng,endAng){
+    const sx=cx+R*Math.cos(startAng), sy=cy+R*Math.sin(startAng);
+    const ex=cx+R*Math.cos(endAng),   ey=cy+R*Math.sin(endAng);
+    const large = (endAng-startAng)>Math.PI ? 1:0;
+    return `M ${cx} ${cy} L ${sx} ${sy} A ${R} ${R} 0 ${large} 1 ${ex} ${ey} Z`;
+  }
+  const startOffset=-Math.PI/2; // começa em cima
+  // setores
+  labels.forEach((lab,i)=>{
+    const a0=startOffset + 2*Math.PI*(i/N);
+    const a1=startOffset + 2*Math.PI*((i+1)/N);
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const fill = (lab==='0'||lab==='00') ? '#0a5c2f' : (isRed(lab)?'#7a0b14':'#0b1530');
+    path.setAttribute('d', arcPath(a0,a1));
+    path.setAttribute('fill', fill);
+    path.setAttribute('stroke', '#0e1a34');
+    path.setAttribute('stroke-width', '1');
+    g.appendChild(path);
+
+    // número
+    const mid=(a0+a1)/2, rx=cx+(R-22)*Math.cos(mid), ry=cy+(R-22)*Math.sin(mid);
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', rx); text.setAttribute('y', ry);
+    text.setAttribute('text-anchor','middle'); text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('font-size','12'); text.setAttribute('fill','#e6eef8');
+    text.textContent=lab; g.appendChild(text);
+  });
+  // chips para “Top N”
+  const chipR=10;
+  const topSet = new Set(predictedList);
+  labels.forEach((lab,i)=>{
+    if(!topSet.has(lab)) return;
+    const a0=startOffset + 2*Math.PI*(i/N);
+    const a1=startOffset + 2*Math.PI*((i+1)/N);
+    const mid=(a0+a1)/2, r=R*0.72;
+    const x=cx+r*Math.cos(mid), y=cy+r*Math.sin(mid);
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',chipR);
+    c.setAttribute('fill','var(--chip)'); c.setAttribute('stroke','#221'); c.setAttribute('stroke-width','2');
+    svg.appendChild(c);
+  });
+  // chips para vizinhos (verde)
+  labels.forEach((lab,i)=>{
+    if(!neighbors.has(lab)) return;
+    const a0=startOffset + 2*Math.PI*(i/N);
+    const a1=startOffset + 2*Math.PI*((i+1)/N);
+    const mid=(a0+a1)/2, r=R*0.55;
+    const x=cx+r*Math.cos(mid), y=cy*r*Math.sin(mid);
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',8);
+    c.setAttribute('fill','var(--chip2)'); c.setAttribute('stroke','#143'); c.setAttribute('stroke-width','2');
+    svg.appendChild(c);
+  });
+}
+
+/* ============ AÇÕES ============ */
 function addNumber(label){
-  label = String(label);
-  const labels = getLabels();
+  label=String(label);
+  const labels=getLabels();
   if(!labels.includes(label)){ alert('Número "'+label+'" não é válido para a roleta selecionada.'); return; }
   history.unshift(label);
-  if(history.length > MAX_HISTORY) history = history.slice(0,MAX_HISTORY);
-  renderHistory();
-  renderPredictions();
+  if(history.length>MAX_HISTORY) history=history.slice(0,MAX_HISTORY);
+  renderHistory(); renderPredictions();
+}
+function playBeep(){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25); o.stop(audioCtx.currentTime + 0.3); }, 250);
+  }catch(e){ console.log('Beep failed', e); }
 }
 
-document.getElementById('undo').addEventListener('click', ()=>{
-  if(history.length>0) history.shift();
+/* ============ IMPORT/EXPORT/URL ============ */
+function importPlain(text){
+  const labels=getLabels();
+  const parts = text.split(/[^0-9]+|(?<=0)0(?!\d)/g); // quebra geral; tratamos 00 separado depois
+  // mais robusto: pega todos tokens de 0–36 e '00'
+  const tokens = text.match(/00|[0-9]+/g) || [];
+  const valid = tokens.map(t=>String(t)).filter(t=>labels.includes(t));
+  history = valid.reverse().concat(history);
+  if(history.length>MAX_HISTORY) history=history.slice(0,MAX_HISTORY);
   renderHistory(); renderPredictions();
-});
-document.getElementById('clear').addEventListener('click', ()=>{
-  if(confirm('Limpar todo o histórico?')){ history = []; renderHistory(); renderPredictions(); }
-});
+}
+async function fetchFromUrl(){
+  const el=document.getElementById('urlInput'), status=document.getElementById('urlStatus');
+  const url=(el.value||'').trim(); if(!url){ status.innerHTML='<span class="bad">Informe um URL.</span>'; return; }
+  status.textContent='Buscando…';
+  try{
+    const resp=await fetch(url,{mode:'cors'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const text=await resp.text();
+    // tenta CSV: números separados por vírgula/linha; senão, tenta extrair por regex
+    const nums = (text.match(/00|[0-9]{1,2}/g) || []).map(s=>String(s));
+    if(nums.length===0) throw new Error('Não encontrei números no conteúdo.');
+    const labels=getLabels();
+    const valid=nums.filter(n=>labels.includes(n));
+    if(valid.length===0) throw new Error('Nenhum número compatível com a roleta atual.');
+    history = valid.reverse().concat(history);
+    if(history.length>MAX_HISTORY) history=history.slice(0,MAX_HISTORY);
+    renderHistory(); renderPredictions();
+    status.innerHTML='<span class="ok">Importado '+valid.length+' números.</span>';
+  }catch(err){
+    status.innerHTML = '<span class="bad">Falha ao buscar (CORS ou formato). Baixe o CSV e use "Importar CSV".</span>';
+  }
+}
+
+/* ============ PERSISTÊNCIA LOCAL ============ */
+function saveSession(){
+  const data={wheel:getWheel(),history,params:{
+    HL:document.getElementById('paramHalfLife').value,
+    MW:document.getElementById('paramMomentumWindow').value,
+    MB:document.getElementById('paramMomentumBonus').value,
+    TH:document.getElementById('paramThreshold').value,
+    PC:document.getElementById('pickCount').value,
+    NB:document.getElementById('neighbors').value
+  }};
+  localStorage.setItem('roleta_previsor_pro', JSON.stringify(data));
+  alert('Sessão salva no dispositivo.');
+}
+function loadSession(){
+  try{
+    const raw=localStorage.getItem('roleta_previsor_pro'); if(!raw) return alert('Nenhuma sessão salva.');
+    const d=JSON.parse(raw);
+    document.getElementById('wheelType').value=d.wheel||'european';
+    history = Array.isArray(d.history)? d.history : [];
+    if(d.params){
+      document.getElementById('paramHalfLife').value=d.params.HL||50;
+      document.getElementById('paramMomentumWindow').value=d.params.MW||6;
+      document.getElementById('paramMomentumBonus').value=d.params.MB||1.2;
+      document.getElementById('paramThreshold').value=d.params.TH||1.6;
+      document.getElementById('pickCount').value=d.params.PC||20;
+      document.getElementById('neighbors').value=d.params.NB||4;
+    }
+    renderButtons(); renderHistory(); renderPredictions();
+    alert('Sessão carregada.');
+  }catch(e){ alert('Falha ao carregar sessão.'); }
+}
+
+/* ============ HANDLERS DE BOTÕES ============ */
+document.getElementById('undo').addEventListener('click', ()=>{ if(history.length>0) history.shift(); renderHistory(); renderPredictions(); });
+document.getElementById('clear').addEventListener('click', ()=>{ if(confirm('Limpar todo o histórico?')){ history=[]; renderHistory(); renderPredictions(); }});
 document.getElementById('copyList').addEventListener('click', ()=>{
-  if(!window._lastPredictions){ alert('Sem previsões ainda.'); return; }
-  const arr = window._lastPredictions.byWheel.slice();
-  const text = arr.join(', ');
-  navigator.clipboard.writeText(text).then(()=> alert('Lista copiada')).catch(()=> alert('Não foi possível copiar.'));
+  if(!lastPred){ alert('Sem previsões.'); return;}
+  const text = lastPred.byWheel.join(', ');
+  navigator.clipboard.writeText(text).then(()=>alert('Lista copiada (ordem da roda).')).catch(()=>alert('Falha ao copiar.'));
 });
 document.getElementById('exportCsv').addEventListener('click', ()=>{
-  const blob = new Blob([history.slice().reverse().join(',')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='roleta_history.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const blob=new Blob([history.slice().reverse().join(',')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='roleta_history.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    const txt = ev.target.result;
-    const parts = txt.split(/[,\\n\\r]+/).map(s=>s.trim()).filter(s=>s!=='');
-    const labels = getLabels();
-    const valid = parts.map(p=>String(p)).filter(p=> labels.includes(String(p)));
-    history = valid.reverse().concat(history);
-    if(history.length > MAX_HISTORY) history = history.slice(0,MAX_HISTORY);
-    renderHistory(); renderPredictions();
-  };
-  reader.readAsText(f);
-  e.target.value = '';
+document.getElementById('fileInput').addEventListener('change',(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{ importPlain(ev.target.result); };
+  reader.readAsText(f); e.target.value='';
 });
 document.getElementById('bulkImport').addEventListener('click', ()=>{
-  const txt = document.getElementById('bulkInput').value.trim();
-  if(!txt) return;
-  const parts = txt.split(',').map(s=>s.trim()).filter(s=>s!=='');
-  const labels = getLabels();
-  const valid = parts.map(p=>String(p)).filter(p=> labels.includes(String(p)));
-  history = valid.reverse().concat(history);
-  if(history.length > MAX_HISTORY) history = history.slice(0,MAX_HISTORY);
-  document.getElementById('bulkInput').value = '';
-  renderHistory(); renderPredictions();
+  const txt=document.getElementById('bulkInput').value.trim(); if(!txt) return;
+  importPlain(txt); document.getElementById('bulkInput').value='';
 });
 document.getElementById('downloadHistory').addEventListener('click', ()=>{
-  const blob = new Blob([history.slice().reverse().join(',')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='roleta_history.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const blob=new Blob([history.slice().reverse().join(',')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='roleta_history.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 document.getElementById('downloadHtml').addEventListener('click', ()=>{
-  const html = '<!doctype html>\\n' + document.documentElement.outerHTML;
-  const blob = new Blob([html], {type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='roleta_previsor_index.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const html='<!doctype html>\n'+document.documentElement.outerHTML;
+  const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='roleta_previsor_pro.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
-let audioCtx = null;
-function playBeep(){ try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.setValueAtTime(0.0001, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01); setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25); o.stop(audioCtx.currentTime + 0.3); }, 250); }catch(e){ console.log('Beep failed', e); } }
-
 document.getElementById('pickCount').addEventListener('change', renderPredictions);
-document.getElementById('wheelType').addEventListener('change', ()=>{
-  renderButtons(); renderHistory(); renderPredictions();
-});
+document.getElementById('wheelType').addEventListener('change', ()=>{ renderButtons(); renderHistory(); renderPredictions(); });
 document.getElementById('paramHalfLife').addEventListener('change', renderPredictions);
 document.getElementById('paramMomentumWindow').addEventListener('change', renderPredictions);
 document.getElementById('paramMomentumBonus').addEventListener('change', renderPredictions);
 document.getElementById('paramThreshold').addEventListener('change', renderPredictions);
 document.getElementById('alarmMode').addEventListener('change', renderPredictions);
 document.getElementById('soundToggle').addEventListener('change', ()=>{ /* noop */ });
+document.getElementById('applyNeighbors').addEventListener('click', applyNeighborsUI);
+document.getElementById('fetchUrl').addEventListener('click', fetchFromUrl);
+document.getElementById('saveSession').addEventListener('click', saveSession);
+document.getElementById('loadSession').addEventListener('click', loadSession);
 
-// Initialize
-renderButtons();
-renderHistory();
-renderPredictions();
+/* INIT */
+renderButtons(); renderHistory(); renderPredictions();
+setTimeout(()=>applyNeighborsUI(), 50);
 </script>
 </body>
 </html>
